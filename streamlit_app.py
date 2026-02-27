@@ -94,7 +94,7 @@ _DEFAULTS = {
     "tags":[],"last_q":"","page":1,
     "results":[],"has_more":False,
     "chat":[],"ai_hist":[],
-    "fanza_api_id":"","fanza_aff_id":"","openai_key":"",
+    "fanza_api_id":"NWStpzuZG2fkaDcUmqX3","fanza_aff_id":"HSC-990","openai_key":"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",
 }
 for _k,_v in _DEFAULTS.items():
     if _k not in st.session_state:
