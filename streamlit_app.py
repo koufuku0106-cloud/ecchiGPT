@@ -355,6 +355,9 @@ def build_ui_html():
         if pf: chips_html+=f'<span class="chip">プレイ:{esc(PLAY_LABELS.get(pf,pf))}</span>'
         for t in tags: chips_html+=f'<span class="chip">{esc(t)}</span>'
 
+    # クリアボタン（f-string内バックスラッシュ回避のため変数化）
+    clear_btn_html = '<button id="clear-btn" onclick="act(\'clear\')">クリア</button>' if (tags or mode!="none" or pf) else ""
+
     # モードボタン
     s_on='on' if mode=="single" else ''
     c_on='on' if mode=="collection" else ''
@@ -506,7 +509,7 @@ body{{font-family:'Noto Sans JP','Hiragino Sans',sans-serif;background:#f4f4f4;p
   <div id="summary">
     <span style="color:#bbb;font-size:11px;white-space:nowrap">条件：</span>
     {chips_html}
-    {('<button id="clear-btn" onclick="act(\'clear\')">クリア</button>' if (tags or mode!="none" or pf) else "")}
+    {clear_btn_html}
   </div>
 
   <div id="modebar">
