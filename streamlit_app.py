@@ -24,8 +24,8 @@ st.set_page_config(
 # 定数
 # ─────────────────────────────────────────────
 CACHE_SEC        = 300
-FETCH_HITS       = 60
-PER_PAGE         = 10
+FETCH_HITS       = 100   # APIから多めに取得してスコアリング
+PER_PAGE         = 10    # パッケージ表示件数
 MIN_RELEASE_YEAR = 2016
 
 NG_GENRE_KEYWORDS = [
@@ -48,12 +48,18 @@ STOP_WORDS = {
     "です","ます","だ","ね","よ","なに","何","っぽい","みたい","感じ",
 }
 NOISE_WORDS = {"セックス","SEX","エロ","H","アダルト"}
+
 PLAY_LABELS = {
-    "":"おまかせ",
-    "soft":"🌸 ソフト",
-    "hard":"🔥 ハード",
-    "semeru":"💥 責める",
-    "semerareru":"💋 責められる",
+    "":"おまかせ","soft":"🌸 ソフト","hard":"🔥 ハード",
+    "semeru":"💥 責める","semerareru":"💋 責められる",
+}
+
+# インタビューで収集する3軸
+INTERVIEW_AXES = ["face", "style", "play"]
+INTERVIEW_QUESTIONS = {
+    "face":  "どんな顔タイプが好き？（例：清楚、ギャル、童顔、お姉さん系、外国人系…）",
+    "style": "スタイルの好みは？（例：巨乳、貧乳、スレンダー、グラマー、ロリ体型…）",
+    "play":  "どんなプレイ内容が見たい？（例：中出し、3P、調教、フェラ、イチャラブ…）",
 }
 
 # ─────────────────────────────────────────────
@@ -67,12 +73,7 @@ html, body, [class*="css"] {
     font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif !important;
     background: #f7f7f8 !important;
 }
-
-/* ページ幅・余白 */
-.block-container {
-    padding: 0 0 5rem 0 !important;
-    max-width: 760px !important;
-}
+.block-container { padding: 0 0 5rem 0 !important; max-width: 760px !important; }
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 .stDeployButton { display: none !important; }
@@ -81,8 +82,7 @@ footer { display: none !important; }
 .favo-header {
     display: flex; align-items: center; gap: 10px;
     padding: 14px 20px 12px;
-    background: #fff;
-    border-bottom: 1px solid #ebebeb;
+    background: #fff; border-bottom: 1px solid #ebebeb;
     position: sticky; top: 0; z-index: 100;
 }
 .favo-logo {
@@ -98,8 +98,7 @@ footer { display: none !important; }
 .favo-summary {
     display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
     padding: 6px 20px; min-height: 34px;
-    background: #fafafa;
-    border-bottom: 1px solid #ebebeb;
+    background: #fafafa; border-bottom: 1px solid #ebebeb;
     font-size: 11px; color: #bbb;
 }
 .favo-chip {
@@ -109,162 +108,136 @@ footer { display: none !important; }
     font-size: 11px; color: #555;
 }
 
-/* ─ モードバー ─ */
-.modebar-wrap {
-    padding: 8px 20px;
-    background: #fff;
-    border-bottom: 1px solid #ebebeb;
-    display: flex; align-items: center; gap: 6px;
-}
-
-/* ─ Streamlit ボタン（モードバー） ─ */
+/* ─ ボタン共通 ─ */
 div[data-testid="stButton"] button {
-    border-radius: 999px !important;
-    font-size: 12px !important;
-    padding: 4px 14px !important;
-    font-family: inherit !important;
-    border: 1px solid #e0e0e0 !important;
-    background: #fff !important;
-    color: #555 !important;
-    transition: all .15s !important;
-    font-weight: 500 !important;
+    border-radius: 999px !important; font-size: 12px !important;
+    padding: 4px 14px !important; font-family: inherit !important;
+    border: 1px solid #e0e0e0 !important; background: #fff !important;
+    color: #555 !important; transition: all .15s !important; font-weight: 500 !important;
 }
-div[data-testid="stButton"] button:hover {
-    border-color: #999 !important;
-    color: #111 !important;
-}
+div[data-testid="stButton"] button:hover { border-color: #999 !important; color: #111 !important; }
 .mode-on div[data-testid="stButton"] button {
-    background: #111 !important;
-    border-color: #111 !important;
-    color: #fff !important;
+    background: #111 !important; border-color: #111 !important; color: #fff !important;
 }
 
-/* ─ チャットエリア ─ */
-/* アシスタントメッセージ */
+/* ─ チャットバブル ─ */
 [data-testid="stChatMessage"] {
-    padding: 16px 20px !important;
-    background: transparent !important;
-    border: none !important;
-    max-width: 100% !important;
+    padding: 14px 20px !important; background: transparent !important; border: none !important;
 }
-/* userは右寄せ風 */
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-    background: transparent !important;
-    flex-direction: row-reverse !important;
-}
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) { flex-direction: row-reverse !important; }
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) .stChatMessageContent {
-    background: #111 !important;
-    color: #fff !important;
+    background: #111 !important; color: #fff !important;
     border-radius: 18px 18px 4px 18px !important;
-    padding: 10px 14px !important;
-    font-size: 14px !important;
-    max-width: 75% !important;
-    border: none !important;
-    box-shadow: none !important;
+    padding: 10px 14px !important; font-size: 14px !important;
+    max-width: 75% !important; border: none !important;
 }
-/* assistantはChatGPT風グレー */
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) .stChatMessageContent {
-    background: #f0f0f0 !important;
-    color: #111 !important;
+    background: #f0f0f0 !important; color: #111 !important;
     border-radius: 18px 18px 18px 4px !important;
-    padding: 10px 14px !important;
-    font-size: 14px !important;
-    max-width: 80% !important;
-    border: none !important;
-    box-shadow: none !important;
+    padding: 10px 14px !important; font-size: 14px !important;
+    max-width: 82% !important; border: none !important;
 }
-/* アバター */
 [data-testid="chatAvatarIcon-assistant"] {
-    background: #111 !important;
-    border-radius: 50% !important;
-    color: #fff !important;
-    font-size: 14px !important;
+    background: #111 !important; border-radius: 50% !important; color: #fff !important;
 }
 [data-testid="chatAvatarIcon-user"] {
-    background: #e8e8e8 !important;
-    border-radius: 50% !important;
-    color: #555 !important;
+    background: #e8e8e8 !important; border-radius: 50% !important; color: #555 !important;
 }
 
-/* ─ chat_input ─ */
-[data-testid="stChatInput"] {
-    border-top: 1px solid #ebebeb !important;
-    background: #fff !important;
-    padding: 10px 20px !important;
+/* ─ インタビュー進捗バー ─ */
+.interview-progress {
+    display: flex; gap: 6px; align-items: center;
+    padding: 8px 20px; background: #fff; border-bottom: 1px solid #ebebeb;
 }
-[data-testid="stChatInput"] textarea {
-    font-size: 14px !important;
-    border-radius: 24px !important;
-    border: 1px solid #e0e0e0 !important;
-    background: #fff !important;
-    font-family: inherit !important;
-    padding: 10px 16px !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06) !important;
-    resize: none !important;
+.ipbar-label { font-size: 11px; color: #aaa; margin-right: 4px; }
+.ipbar-step {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px;
 }
-[data-testid="stChatInput"] textarea:focus {
-    border-color: #aaa !important;
-    box-shadow: 0 0 0 3px rgba(0,0,0,.06) !important;
-    outline: none !important;
+.ipbar-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
 }
-[data-testid="stChatInput"] button {
-    background: #111 !important;
-    border-radius: 50% !important;
-    color: #fff !important;
-    border: none !important;
-}
+.ipbar-dot.done  { background: #111; color: #fff; }
+.ipbar-dot.now   { background: #555; color: #fff; }
+.ipbar-dot.later { background: #e8e8e8; color: #aaa; }
+.ipbar-arrow     { color: #ccc; font-size: 10px; }
 
-/* ─ 結果グリッド ─ */
+/* ─ 結果グリッド (10件パッケージ) ─ */
+.results-section {
+    background: #fff; border-top: 1px solid #ebebeb; padding: 16px 20px 4px;
+}
+.results-title {
+    font-size: 13px; font-weight: 700; color: #111; margin-bottom: 10px;
+}
 .favo-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    padding: 0 20px 8px;
-    margin-top: 6px;
+    display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 12px;
 }
-@media(max-width:540px){ .favo-grid { grid-template-columns: repeat(2,1fr); padding: 0 10px 8px; } }
+@media(max-width:540px){ .favo-grid { grid-template-columns: repeat(2,1fr); } }
 .favo-card {
-    border: 1px solid #ebebeb;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #fff;
-    transition: all .18s;
-    text-decoration: none;
-    display: block;
+    border: 1px solid #ebebeb; border-radius: 10px; overflow: hidden;
+    background: #fff; transition: all .18s; text-decoration: none; display: block;
 }
 .favo-card:hover {
-    border-color: #ccc;
-    box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    transform: translateY(-1px);
+    border-color: #ccc; box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px);
 }
 .favo-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
 .favo-card-title {
-    display: block; text-align: center;
-    font-size: 10px; color: #999;
-    padding: 5px 4px;
-    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-    text-decoration: none;
+    display: block; text-align: center; font-size: 10px; color: #999;
+    padding: 5px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
 }
 .favo-card-title:hover { color: #111; }
 .no-img {
-    width: 100%; aspect-ratio: 3/4;
-    background: #f5f5f5;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: #ccc;
+    width: 100%; aspect-ratio: 3/4; background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; color: #ccc;
 }
+
+/* ─ もっと見るボタン ─ */
+.more-btn-wrap { display: flex; justify-content: center; padding: 4px 0 16px; }
+.more-btn {
+    padding: 10px 28px; border-radius: 12px;
+    border: 1.5px solid #111; background: #fff;
+    color: #111; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: all .18s;
+    text-decoration: none; display: inline-block;
+}
+.more-btn:hover { background: #111; color: #fff; }
+
+/* ─ 全件展開グリッド ─ */
+.all-results-section {
+    background: #f7f7f8; padding: 16px 20px;
+    border-top: 1px solid #ebebeb;
+}
+.all-results-title { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 10px; }
 
 /* ─ 女優カード ─ */
 .actress-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .actress-item { width: 72px; text-align: center; }
 .actress-item img {
     width: 72px; height: 96px; object-fit: cover;
-    border-radius: 8px; border: 2px solid #ebebeb; display: block;
-    transition: border-color .15s;
+    border-radius: 8px; border: 2px solid #ebebeb; display: block; transition: border-color .15s;
 }
 .actress-item img:hover { border-color: #111; }
 .actress-name { font-size: 10px; color: #444; margin-top: 3px; font-weight: 700; word-break: break-all; }
 .actress-tags { font-size: 9px; color: #bbb; }
 
+/* ─ chat_input ─ */
+[data-testid="stChatInput"] {
+    border-top: 1px solid #ebebeb !important; background: #fff !important; padding: 10px 20px !important;
+}
+[data-testid="stChatInput"] textarea {
+    font-size: 14px !important; border-radius: 24px !important;
+    border: 1px solid #e0e0e0 !important; background: #fff !important;
+    font-family: inherit !important; padding: 10px 16px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06) !important; resize: none !important;
+}
+[data-testid="stChatInput"] textarea:focus {
+    border-color: #aaa !important; box-shadow: 0 0 0 3px rgba(0,0,0,.06) !important;
+}
+[data-testid="stChatInput"] button {
+    background: #111 !important; border-radius: 50% !important; border: none !important;
+}
 .favo-divider { height: 1px; background: #ebebeb; margin: 4px 0; }
 </style>
 """, unsafe_allow_html=True)
@@ -273,18 +246,28 @@ div[data-testid="stButton"] button:hover {
 # セッション初期化
 # ─────────────────────────────────────────────
 _DEFAULTS = {
-    "mode": "none",
-    "play_filter": "",
-    "tags": [],
-    "last_q": "",
-    "page": 1,
-    "results": [],
-    "has_more": False,
-    "chat": [],
-    "ai_hist": [],
-    "fanza_api_id": "",
-    "fanza_aff_id": "",
-    "openai_key": "",
+    "mode":          "none",
+    "play_filter":   "",
+    "tags":          [],
+    "celeb_names":   [],
+    "last_q":        "",
+    "page":          1,
+    "results":       [],        # 10件パッケージ
+    "all_results":   [],        # 全件（もっと見る展開用）
+    "show_all":      False,     # 全件表示フラグ
+    "has_more":      False,
+    "chat":          [],
+    "ai_hist":       [],
+    # インタビュー状態
+    "iv_face":       None,      # 顔タイプ
+    "iv_style":      None,      # スタイル
+    "iv_play":       None,      # プレイ内容
+    "iv_done":       False,     # 3軸収集完了フラグ
+    "iv_next_axis":  "face",    # 次に聞く軸
+    # APIキー
+    "fanza_api_id":  "",
+    "fanza_aff_id":  "",
+    "openai_key":    "",
 }
 for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
@@ -304,6 +287,15 @@ def esc(s):
 
 def dedup(lst):
     return list(dict.fromkeys(x for x in lst if x))
+
+def make_affiliate_url(base_url: str, aff_id: str) -> str:
+    """FANZA アフィリエイトURLを生成"""
+    if not base_url: return "#"
+    if not aff_id:   return base_url
+    # すでにaff_idが含まれていればそのまま
+    if aff_id in base_url: return base_url
+    sep = "&" if "?" in base_url else "?"
+    return f"{base_url}{sep}affiliate_id={aff_id}"
 
 # ─────────────────────────────────────────────
 # JSON 読み込み
@@ -491,24 +483,45 @@ def fanza_fetch(keyword, hits, api_id, aff_id):
     except Exception as e:
         return {"items":[], "error":str(e)}
 
-def do_search(q_raw, mode, play_filter, page, api_id, aff_id):
+def format_item(it, aff_id):
+    """APIアイテムを表示用dictに変換（アフィリエイトURL付き）"""
+    base_url = it.get("URL","")
+    return {
+        "title": it.get("title",""),
+        "url":   make_affiliate_url(base_url, aff_id),
+        "image": it.get("imageURL",{}).get("small","") or it.get("imageURL",{}).get("large",""),
+    }
+
+def do_search(q_raw, mode, play_filter, api_id, aff_id, celeb_names=None):
+    """
+    全件取得してスコアリング。
+    戻り値: {"top10": [...], "all": [...]}
+    - top10: 上位10件（パッケージ表示用）
+    - all:   全件（「もっと詳しく見る」展開用）
+    """
     split  = split_query(q_raw)
     celmap = build_celebrity_map()
-    celeb_cands = dedup(
-        a for c in split["celebrity"]
-        for a in list(celmap.get(c, {}).keys())[:3]
-    )[:5]
 
-    if split["search"]:
-        items = fanza_fetch(" ".join(split["search"]), FETCH_HITS, api_id, aff_id).get("items",[])
-    elif celeb_cands:
+    # 芸能人 → 女優マッピング
+    all_celebs = dedup((celeb_names or []) + split["celebrity"])
+    celeb_actress_map = {}
+    for cn in all_celebs:
+        for a in list(celmap.get(norm(cn), {}).keys()):
+            celeb_actress_map.setdefault(a, []).append(cn)
+    celeb_cands = list(celeb_actress_map.keys())[:5]
+
+    # ── 検索 ──
+    if celeb_cands:
+        # 芸能人モード：紐付き女優の出演作品だけを返す
         items, seen = [], set()
-        for c in celeb_cands[:3]:
-            for it in fanza_fetch(c, 25, api_id, aff_id).get("items",[]):
+        for actress_name in celeb_cands:
+            for it in fanza_fetch(actress_name, 50, api_id, aff_id).get("items", []):
+                act_names = [norm(a.get("name","")) for a in it.get("iteminfo",{}).get("actress",[])]
+                if norm(actress_name) not in act_names: continue
                 k = it.get("URL","") or it.get("content_id","")
-                if k and k not in seen:
-                    seen.add(k); items.append(it)
-                if len(items) >= FETCH_HITS: break
+                if k and k not in seen: seen.add(k); items.append(it)
+    elif split["search"]:
+        items = fanza_fetch(" ".join(split["search"]), FETCH_HITS, api_id, aff_id).get("items",[])
     else:
         alias_map = build_alias_map()
         q_n = norm(q_raw)
@@ -516,48 +529,70 @@ def do_search(q_raw, mode, play_filter, page, api_id, aff_id):
             if a and a in q_n: q_n = q_n.replace(a, c)
         items = fanza_fetch(norm(q_n), FETCH_HITS, api_id, aff_id).get("items",[])
 
+    # ── フィルタ → スコアリング ──
     filtered = [it for it in items if match_mode(it, mode) and match_play(it, play_filter)]
     sorted_  = sorted(filtered, key=lambda it: -score_item(it, split["meaning"]))
-    off       = (page - 1) * PER_PAGE
-    page_items= sorted_[off:off+PER_PAGE]
-    has_more  = len(sorted_) > off + PER_PAGE
-    out = [{
-        "title":    it.get("title",""),
-        "url":      it.get("URL",""),
-        "image":    it.get("imageURL",{}).get("small","") or it.get("imageURL",{}).get("large",""),
-    } for it in page_items]
-    return {"items":out, "has_more":has_more}
+
+    all_fmt  = [format_item(it, aff_id) for it in sorted_]
+    top10    = all_fmt[:PER_PAGE]
+    return {"top10": top10, "all": all_fmt}
 
 # ─────────────────────────────────────────────
-# OpenAI
+# OpenAI インタビュー解釈
 # ─────────────────────────────────────────────
-def ai_interpret(user_msg, history, current_tags, api_key):
-    if not api_key: return {"error":"no_api_key"}
-    cands = score_actresses_for_ai(current_tags or [user_msg], 6)
-    actress_ctx = ""
-    if cands:
-        lines = [f"・{c['name']}（{'・'.join(c['tags']) or 'タグ未登録'}）" for c in cands]
-        actress_ctx = "\n\n# 候補女優\n" + "\n".join(lines) + "\n※希望に近い女優をselected_actressesに。"
-    system = (
-        "あなたはアダルトDVD検索サイトのアシスタントです。\n"
-        "ユーザーの日本語入力から検索タグと最適な女優を選んでください。\n\n"
-        "# 出力形式（JSONのみ）\n"
-        '{"tags":["タグ"],"selected_actresses":["女優名"],'
-        '"detected_celebs":["芸能人名"],'
-        '"play_filter":"none|soft|hard|semeru|semerareru",'
-        '"bot_reply":"返答（1〜2文、フレンドリーに）","remove_tags":["削除タグ"]}'
-        + actress_ctx
-    )
+def ai_interview(user_msg, history, collected, api_key):
+    """
+    collected: {"face": ..., "style": ..., "play": ...}  現在収集済みの情報
+    戻り値: {
+        "face": "清楚系",      # 今回の発言から取れた顔タイプ（なければnull）
+        "style": "巨乳",       # スタイル
+        "play": "中出し 3P",   # プレイ
+        "tags": ["清楚","巨乳","中出し"],
+        "detected_celebs": ["白石麻衣"],
+        "next_axis": "style",  # まだ聞くべき軸（face/style/play/done）
+        "bot_reply": "..."
+    }
+    """
+    collected_str = json.dumps(collected, ensure_ascii=False)
+    system = f"""あなたはアダルトDVD検索サイトのアシスタントです。
+ユーザーとの会話から、以下の3軸の情報を収集してください。
+
+# 収集する情報
+- face:  顔タイプ（清楚、ギャル、童顔、お姉さん系、外国人系、など）
+- style: スタイル（巨乳、貧乳、スレンダー、グラマー、ロリ体型、など）
+- play:  プレイ内容（中出し、3P、調教、フェラ、イチャラブ、など 複数可）
+
+# 現在収集済み
+{collected_str}
+
+# 出力形式（JSONのみ・説明不要）
+{{
+  "face": "顔タイプ（今回取れた場合。なければnull）",
+  "style": "スタイル（今回取れた場合。なければnull）",
+  "play": "プレイ（今回取れた場合。なければnull）",
+  "tags": ["検索タグ1", "検索タグ2"],
+  "detected_celebs": ["芸能人名"],
+  "next_axis": "face|style|play|done",
+  "bot_reply": "返答（1〜2文。次に聞くべき質問を自然に含める。全部揃ったら探す旨を伝える）"
+}}
+
+# ルール
+- next_axisは収集できていない軸を返す。全部揃ったら"done"
+- bot_replyは自然でフレンドリーに。質問は1つだけ
+- detected_celebsは芸能人・アイドル・タレント名を入れる
+- 出力はJSONのみ"""
+
     messages = [{"role":"system","content":system}]
-    for h in history[-6:]:
+    for h in history[-8:]:
         if h.get("role") in ("user","assistant") and h.get("content"):
             messages.append({"role":h["role"],"content":h["content"]})
     messages.append({"role":"user","content":str(user_msg)})
+
     try:
         r = requests.post(
             "https://api.openai.com/v1/chat/completions",
             headers={"Authorization":f"Bearer {api_key}","Content-Type":"application/json"},
-            json={"model":"gpt-4o-mini","messages":messages,"temperature":0.3,"max_tokens":400},
+            json={"model":"gpt-4o-mini","messages":messages,"temperature":0.4,"max_tokens":500},
             timeout=15,
         )
         r.raise_for_status()
@@ -569,23 +604,21 @@ def ai_interpret(user_msg, history, current_tags, api_key):
         return {"error":str(e)}
 
 # ─────────────────────────────────────────────
-# 結果カードHTML
+# HTMLレンダラー
 # ─────────────────────────────────────────────
-def render_results_html(items):
+def render_results_html(items, title="おすすめ作品 Top 10"):
     if not items: return ""
     cards = ""
     for it in items:
-        t   = (it["title"][:18]+"…") if len(it["title"]) > 18 else it["title"]
+        t   = (it["title"][:16]+"…") if len(it["title"]) > 16 else it["title"]
         url = esc(it.get("url","#"))
         img = (f'<img src="{esc(it["image"])}" loading="lazy" alt="">'
                if it.get("image") else '<div class="no-img">no img</div>')
         cards += (
             f'<a class="favo-card" href="{url}" target="_blank" rel="nofollow noopener">'
-            f'{img}'
-            f'<span class="favo-card-title">▶ {esc(t)}</span>'
-            f'</a>'
+            f'{img}<span class="favo-card-title">▶ {esc(t)}</span></a>'
         )
-    return f'<div class="favo-grid">{cards}</div>'
+    return f'<div class="results-section"><div class="results-title">{esc(title)}</div><div class="favo-grid">{cards}</div></div>'
 
 def render_actress_cards_html(cards):
     if not cards: return ""
@@ -596,13 +629,31 @@ def render_actress_cards_html(cards):
                '<div style="width:72px;height:96px;background:#f0f0f0;border-radius:8px;'
                'display:flex;align-items:center;justify-content:center;font-size:9px;color:#ccc">no img</div>')
         tags_str = " · ".join(c.get("tags",[])[:3])
-        html += (
-            f'<div class="actress-item">{img}'
-            f'<div class="actress-name">{esc(c["name"])}</div>'
-            f'<div class="actress-tags">{esc(tags_str)}</div>'
-            f'</div>'
-        )
+        html += (f'<div class="actress-item">{img}'
+                 f'<div class="actress-name">{esc(c["name"])}</div>'
+                 f'<div class="actress-tags">{esc(tags_str)}</div></div>')
     return html + '</div>'
+
+def render_progress_bar():
+    axes = [
+        ("face",  "👤 顔",    st.session_state["iv_face"]),
+        ("style", "💪 スタイル", st.session_state["iv_style"]),
+        ("play",  "🎬 プレイ",  st.session_state["iv_play"]),
+    ]
+    next_axis = st.session_state["iv_next_axis"]
+    html = '<div class="interview-progress"><span class="ipbar-label">収集中：</span>'
+    for i, (key, label, val) in enumerate(axes):
+        if i > 0: html += '<span class="ipbar-arrow">›</span>'
+        if val:
+            dot_cls = "done"
+            tip = esc(str(val)[:8])
+        elif key == next_axis:
+            dot_cls = "now"; tip = "？"
+        else:
+            dot_cls = "later"; tip = "－"
+        html += f'<div class="ipbar-step"><span class="ipbar-dot {dot_cls}">{tip}</span><span style="font-size:11px;color:#888;margin-left:3px">{label}</span></div>'
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # サイドバー
@@ -616,7 +667,6 @@ def sidebar():
                                 ("openai_key","OpenAI API Key")]:
                 st.session_state[key] = st.text_input(
                     label, value=st.session_state[key], type="password", key=f"sb_{key}")
-
         st.divider()
         with st.expander("📁 JSONファイル", expanded=True):
             for path, label in [(MASTER_JSON_PATH,"Actress Master"),(CLUSTER_JSON_PATH,"Cluster")]:
@@ -630,7 +680,7 @@ def sidebar():
                     else:
                         dest = MASTER_JSON_PATH if "master" in up.name.lower() else CLUSTER_JSON_PATH
                         dest.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding="utf-8")
-                        st.cache_data.clear(); st.success(f"{dest.name} 保存（{len(data)}件）"); st.rerun()
+                        st.cache_data.clear(); st.success(f"保存（{len(data)}件）"); st.rerun()
                 except Exception as e: st.error(f"エラー: {e}")
             c1, c2 = st.columns(2)
             with c1:
@@ -639,7 +689,6 @@ def sidebar():
             with c2:
                 st.download_button("Cluster↓", data=json.dumps(load_cluster(),ensure_ascii=False,indent=2),
                                    file_name="favo_fanza_cluster.json", mime="application/json", use_container_width=True)
-
         with st.expander("➕ 女優を追加"):
             nn = st.text_input("女優名", key="add_name")
             nt = st.text_input("タグ（カンマ）", key="add_tags")
@@ -647,83 +696,121 @@ def sidebar():
             if st.button("追加", use_container_width=True, key="btn_add"):
                 if nn.strip():
                     master = load_master().copy()
-                    master[nn.strip()] = {
-                        "tags":    [t.strip() for t in nt.split(",") if t.strip()],
-                        "keywords": [],
-                        "celebs":  [c.strip() for c in nc.split(",") if c.strip()],
-                        "img": "",
-                    }
+                    master[nn.strip()] = {"tags":[t.strip() for t in nt.split(",") if t.strip()],
+                                          "keywords":[],"celebs":[c.strip() for c in nc.split(",") if c.strip()],"img":""}
                     MASTER_JSON_PATH.write_text(json.dumps(master,ensure_ascii=False,indent=2),encoding="utf-8")
                     st.cache_data.clear(); st.success(f"追加: {nn}"); st.rerun()
 
 # ─────────────────────────────────────────────
-# 送信ハンドラ
+# 送信ハンドラ（インタビュー統合）
 # ─────────────────────────────────────────────
 def handle_send(typed):
     api_key   = st.session_state["openai_key"]
     fanza_api = st.session_state["fanza_api_id"]
     fanza_aff = st.session_state["fanza_aff_id"]
     actress_cards = []
-    bot_reply = "OK、探すね！"
 
+    # ── AI解釈（インタビューモード） ──
     if api_key:
+        collected = {
+            "face":  st.session_state["iv_face"],
+            "style": st.session_state["iv_style"],
+            "play":  st.session_state["iv_play"],
+        }
         with st.spinner("考え中…"):
-            result = ai_interpret(typed, st.session_state["ai_hist"],
-                                  st.session_state["tags"], api_key)
+            result = ai_interview(typed, st.session_state["ai_hist"], collected, api_key)
+
         if not result.get("error"):
-            bot_reply = result.get("bot_reply", "OK、探すね！")
+            bot_reply = result.get("bot_reply", "OK！")
             st.session_state["ai_hist"] += [
                 {"role":"user","content":typed},
                 {"role":"assistant","content":bot_reply},
             ]
-            remove = [t.strip().lower() for t in result.get("remove_tags",[])]
-            curr   = [t for t in st.session_state["tags"] if t.lower() not in remove]
-            new_t  = [t.strip() for t in result.get("tags",[]) if t.strip()]
-            sel    = [t.strip() for t in result.get("selected_actresses",[]) if t.strip()]
-            st.session_state["tags"] = dedup(curr + new_t + sel)
 
-            pf = result.get("play_filter","none")
-            if pf and pf != "none": st.session_state["play_filter"] = pf
+            # 各軸を更新（今回取れたものだけ上書き）
+            for axis in INTERVIEW_AXES:
+                val = result.get(axis)
+                if val and not st.session_state[f"iv_{axis}"]:
+                    st.session_state[f"iv_{axis}"] = val
 
+            # タグ蓄積
+            new_tags = [t.strip() for t in result.get("tags",[]) if t.strip()]
+            st.session_state["tags"] = dedup(st.session_state["tags"] + new_tags)
+
+            # 芸能人
+            celebs = result.get("detected_celebs",[])
+            celmap = build_celebrity_map()
+            known   = [c for c in celebs if norm(c) in celmap]
+            unknown = [c for c in celebs if norm(c) not in celmap]
+            if known:
+                st.session_state["celeb_names"] = dedup(st.session_state["celeb_names"] + known)
+            if unknown:
+                bot_reply = f"ごめん、{'・'.join(unknown)}に似てる人は見つからなかった。他にいない？"
+
+            # 女優カード
             master = load_master()
-            for name in result.get("selected_actresses",[]):
+            for name in result.get("selected_actresses",[]) if "selected_actresses" in result else []:
                 v = master.get(name) or master.get(norm(name))
                 if v and isinstance(v, dict):
                     actress_cards.append({"name":name,"img":v.get("img",""),"tags":v.get("tags",[])[:4]})
 
-            unknown = [c for c in result.get("detected_celebs",[])
-                       if norm(c) not in build_celebrity_map()]
-            if unknown:
-                bot_reply = f"ごめん、{'・'.join(unknown)}に似てる人は見つからなかった。他にいない？"
+            # 次の軸
+            next_axis = result.get("next_axis","done")
+            st.session_state["iv_next_axis"] = next_axis
+            if next_axis == "done":
+                st.session_state["iv_done"] = True
         else:
-            bot_reply = "OK、探すね 🔍"
+            # フォールバック
+            bot_reply = next_q_fallback()
             st.session_state["tags"] = dedup(
                 st.session_state["tags"] + [norm(p) for p in typed.split() if norm(p)])
     else:
-        bot_reply = "OK、探すね 🔍"
+        # OpenAIなし：そのままタグ追加
+        bot_reply = next_q_fallback()
         st.session_state["tags"] = dedup(
             st.session_state["tags"] + [norm(p) for p in typed.split() if norm(p)])
+        # 3軸が全て埋まったとみなす（OpenAIなしの場合は3回で強制完了）
+        if len(st.session_state["chat"]) >= 5:
+            st.session_state["iv_done"] = True
+            st.session_state["iv_next_axis"] = "done"
 
-    st.session_state["last_q"] = " ".join(st.session_state["tags"])
-
-    # チャット履歴に追加（actress_cardsのHTMLも一緒に保存）
+    # チャットに追加
     actress_html = render_actress_cards_html(actress_cards)
     st.session_state["chat"].append({
-        "role": "bot",
-        "text": bot_reply,
-        "actress_html": actress_html,
+        "role": "bot", "text": bot_reply, "actress_html": actress_html,
     })
 
-    # FANZA検索
-    if fanza_api and fanza_aff and st.session_state["last_q"]:
-        with st.spinner("検索中…"):
-            res = do_search(st.session_state["last_q"], st.session_state["mode"],
-                            st.session_state["play_filter"], 1, fanza_api, fanza_aff)
-        st.session_state.update({"results":res["items"],"has_more":res["has_more"],"page":2})
+    # ── 3軸が揃ったら検索実行 ──
+    st.session_state["last_q"] = " ".join(dedup(
+        st.session_state["tags"]
+        + ([st.session_state["iv_face"]]  if st.session_state["iv_face"]  else [])
+        + ([st.session_state["iv_style"]] if st.session_state["iv_style"] else [])
+        + ([st.session_state["iv_play"]]  if st.session_state["iv_play"]  else [])
+    ))
+
+    if st.session_state["iv_done"] and fanza_api and fanza_aff and st.session_state["last_q"]:
+        with st.spinner("作品を探してるよ…"):
+            res = do_search(
+                st.session_state["last_q"],
+                st.session_state["mode"],
+                st.session_state["play_filter"],
+                fanza_api, fanza_aff,
+                celeb_names=st.session_state["celeb_names"],
+            )
+        st.session_state["results"]     = res["top10"]
+        st.session_state["all_results"] = res["all"]
+        st.session_state["show_all"]    = False
     elif not fanza_api or not fanza_aff:
         st.session_state["chat"].append({
             "role":"bot","text":"⚠ サイドバーの「APIキー」にFANZAのキーを入力してね","actress_html":"",
         })
+
+def next_q_fallback():
+    """OpenAIなし時の次の質問"""
+    axis = st.session_state["iv_next_axis"]
+    if axis in INTERVIEW_QUESTIONS:
+        return INTERVIEW_QUESTIONS[axis]
+    return "OK、探すね！"
 
 # ─────────────────────────────────────────────
 # メイン
@@ -735,14 +822,14 @@ def main():
     st.markdown("""
     <div class="favo-header">
       <div class="favo-logo">E</div>
-      <div>
-        <div class="favo-htitle">EcchiGPT</div>
-        <div class="favo-hsub">会話で探していこう</div>
-      </div>
+      <div><div class="favo-htitle">EcchiGPT</div><div class="favo-hsub">会話で探していこう</div></div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── サマリーバー ──
+    # ── インタビュー進捗バー ──
+    render_progress_bar()
+
+    # ── 条件チップバー ──
     tags = st.session_state["tags"]
     mode = st.session_state["mode"]
     pf   = st.session_state["play_filter"]
@@ -759,23 +846,19 @@ def main():
     st.markdown(f'<div class="favo-summary">条件：{chips}</div>', unsafe_allow_html=True)
 
     # ── モードバー ──
-    mc1, mc2, mc3, mc4, mc5 = st.columns([1.1, 1.2, 1.5, 0.8, 1.2])
+    mc1, mc2, mc3, mc4, mc5 = st.columns([1.1,1.2,1.5,0.8,1.2])
     with mc1:
-        is_s = mode == "single"
+        is_s = mode=="single"
         if is_s: st.markdown('<div class="mode-on">', unsafe_allow_html=True)
         if st.button("📌 単体", key="btn_single", use_container_width=True):
-            st.session_state["mode"] = "none" if is_s else "single"
-            st.rerun()
+            st.session_state["mode"] = "none" if is_s else "single"; st.rerun()
         if is_s: st.markdown('</div>', unsafe_allow_html=True)
-
     with mc2:
-        is_c = mode == "collection"
+        is_c = mode=="collection"
         if is_c: st.markdown('<div class="mode-on">', unsafe_allow_html=True)
         if st.button("📚 総集編", key="btn_col", use_container_width=True):
-            st.session_state["mode"] = "none" if is_c else "collection"
-            st.rerun()
+            st.session_state["mode"] = "none" if is_c else "collection"; st.rerun()
         if is_c: st.markdown('</div>', unsafe_allow_html=True)
-
     with mc3:
         pf_keys = list(PLAY_LABELS.keys())
         new_pf = st.selectbox("プレイ", pf_keys,
@@ -783,34 +866,30 @@ def main():
                                format_func=lambda x: PLAY_LABELS[x],
                                label_visibility="collapsed", key="sel_pf")
         if new_pf != pf:
-            st.session_state["play_filter"] = new_pf
-            st.rerun()
-
+            st.session_state["play_filter"] = new_pf; st.rerun()
     with mc5:
         if tags or mode != "none" or pf:
             if st.button("✕ クリア", key="btn_clear", use_container_width=True):
-                st.session_state.update({"tags":[],"last_q":"","results":[],"page":1,
-                                          "mode":"none","play_filter":""})
-                st.rerun()
-
+                st.session_state.update({"tags":[],"last_q":"","results":[],"all_results":[],
+                                          "mode":"none","play_filter":"","show_all":False}); st.rerun()
     with mc4:
         if st.button("🔄", key="btn_reset", use_container_width=True, help="リセット"):
-            for k, v in _DEFAULTS.items(): st.session_state[k] = v
-            st.rerun()
+            for k, v in _DEFAULTS.items(): st.session_state[k] = v; st.rerun()
 
     st.markdown('<div class="favo-divider"></div>', unsafe_allow_html=True)
 
-    # ── 入力を先に受け取る（rerun前にsession_stateへ反映） ──
-    user_input = st.chat_input("例：黒髪 ボブ 清楚 ちょいエロ…")
+    # ── 入力（先に処理） ──
+    user_input = st.chat_input("なんでも話しかけてみて…")
     if user_input:
         st.session_state["chat"].append({"role":"user","text":user_input,"actress_html":""})
         handle_send(user_input)
         st.rerun()
 
-    # ── チャット履歴を描画（入力処理後に描画するので最新が反映される） ──
+    # ── チャット履歴 ──
     if not st.session_state["chat"]:
         with st.chat_message("assistant", avatar="🔍"):
-            st.write("どんな感じで探す？外見・雰囲気・好きな芸能人、なんでもOKだよ 👀")
+            st.markdown("**どんな子が好き？** まず顔タイプから教えて！\n\n"
+                        "（例：清楚系、ギャル、童顔、お姉さん系、外国人系…）")
     else:
         for msg in st.session_state["chat"]:
             if msg["role"] == "user":
@@ -822,29 +901,30 @@ def main():
                     if msg.get("actress_html"):
                         st.markdown(msg["actress_html"], unsafe_allow_html=True)
 
-    # ── 結果グリッド ──
+    # ── 結果表示（10件パッケージ） ──
     if st.session_state["results"]:
-        st.markdown('<div class="favo-divider"></div>', unsafe_allow_html=True)
-        st.markdown(render_results_html(st.session_state["results"]), unsafe_allow_html=True)
+        st.markdown(render_results_html(st.session_state["results"], "✨ あなたへのおすすめ Top 10"),
+                    unsafe_allow_html=True)
 
-        if st.session_state["has_more"]:
-            col_n, _, _ = st.columns([1.2, 2, 2])
-            with col_n:
-                if st.button("次の10件 →", key="btn_next", use_container_width=True):
-                    api = st.session_state["fanza_api_id"]
-                    aff = st.session_state["fanza_aff_id"]
-                    if api and aff:
-                        with st.spinner("読み込み中…"):
-                            res = do_search(st.session_state["last_q"], st.session_state["mode"],
-                                            st.session_state["play_filter"], st.session_state["page"],
-                                            api, aff)
-                        st.session_state["results"] += res["items"]
-                        st.session_state["has_more"] = res["has_more"]
-                        st.session_state["page"] += 1
-                        st.rerun()
+        # 「もっと詳しく見る」ボタン
+        all_count = len(st.session_state["all_results"])
+        if all_count > PER_PAGE:
+            if not st.session_state["show_all"]:
+                col_m, _, _ = st.columns([1.5, 2, 2])
+                with col_m:
+                    if st.button(f"もっと詳しく見る（全{all_count}件）→", key="btn_show_all", use_container_width=True):
+                        st.session_state["show_all"] = True; st.rerun()
+            else:
+                # 全件グリッド展開
+                all_items = st.session_state["all_results"]
+                st.markdown(render_results_html(all_items, f"全{len(all_items)}件"), unsafe_allow_html=True)
+                col_c, _, _ = st.columns([1.2, 2, 2])
+                with col_c:
+                    if st.button("▲ 折りたたむ", key="btn_collapse", use_container_width=True):
+                        st.session_state["show_all"] = False; st.rerun()
 
-    elif st.session_state["last_q"] and not st.session_state["results"]:
-        st.info("😔 該当作品なし。条件を変えてみて。")
+    elif st.session_state["last_q"] and st.session_state["iv_done"] and not st.session_state["results"]:
+        st.info("😔 条件に合う作品が見つからなかった。条件を変えてみて。")
 
 
 if __name__ == "__main__":
