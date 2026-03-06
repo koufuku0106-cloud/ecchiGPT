@@ -61,119 +61,77 @@ PLAY_LABELS = {
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
 html, body, [class*="css"] {
     font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif !important;
+    background: #f7f7f8 !important;
 }
 
-/* ページ全体 */
+/* ページ幅・余白 */
 .block-container {
-    padding: 1rem 0.5rem 4rem !important;
-    max-width: 780px !important;
+    padding: 0 0 5rem 0 !important;
+    max-width: 760px !important;
 }
 header[data-testid="stHeader"] { display: none !important; }
 footer { display: none !important; }
 .stDeployButton { display: none !important; }
 
-/* ─ ヘッダーカード ─ */
+/* ─ ヘッダー ─ */
 .favo-header {
     display: flex; align-items: center; gap: 10px;
-    padding: 13px 16px;
+    padding: 14px 20px 12px;
     background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 14px 14px 0 0;
-    margin-bottom: 0;
+    border-bottom: 1px solid #ebebeb;
+    position: sticky; top: 0; z-index: 100;
 }
 .favo-logo {
-    width: 30px; height: 30px; border-radius: 8px;
+    width: 28px; height: 28px; border-radius: 7px;
     background: #111; color: #fff;
     display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 14px;
+    font-weight: 900; font-size: 13px; flex-shrink: 0;
 }
-.favo-htitle { font-weight: 800; font-size: 14px; color: #111; }
+.favo-htitle { font-weight: 700; font-size: 14px; color: #111; line-height: 1.2; }
 .favo-hsub   { font-size: 11px; color: #aaa; }
 
-/* ─ サマリーバー ─ */
+/* ─ 条件チップバー ─ */
 .favo-summary {
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    padding: 7px 14px; min-height: 36px;
+    display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    padding: 6px 20px; min-height: 34px;
     background: #fafafa;
-    border-left: 1px solid #e5e5e5;
-    border-right: 1px solid #e5e5e5;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #ebebeb;
     font-size: 11px; color: #bbb;
-    margin-bottom: 0;
 }
 .favo-chip {
     display: inline-flex; align-items: center;
-    padding: 3px 10px; border-radius: 999px;
+    padding: 2px 9px; border-radius: 999px;
     border: 1px solid #e0e0e0; background: #fff;
     font-size: 11px; color: #555;
 }
 
-/* ─ チャットメッセージ上書き ─ */
-[data-testid="stChatMessage"] {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-}
-/* botバブル */
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) .stChatMessageContent {
-    background: #fafafa !important;
-    border: 1px solid #efefef !important;
-    border-radius: 14px !important;
-    color: #222 !important;
-    font-size: 13px !important;
-    line-height: 1.55 !important;
-}
-/* userバブル */
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) .stChatMessageContent {
-    background: #111 !important;
-    border: 1px solid #111 !important;
-    border-radius: 14px !important;
-    color: #fff !important;
-    font-size: 13px !important;
-}
-/* アバター */
-[data-testid="chatAvatarIcon-assistant"] {
-    background: #111 !important;
-    border-radius: 7px !important;
-    color: #fff !important;
-    font-weight: 900 !important;
-}
-[data-testid="chatAvatarIcon-user"] {
-    background: #f0f0f0 !important;
-    border-radius: 7px !important;
-    color: #555 !important;
+/* ─ モードバー ─ */
+.modebar-wrap {
+    padding: 8px 20px;
+    background: #fff;
+    border-bottom: 1px solid #ebebeb;
+    display: flex; align-items: center; gap: 6px;
 }
 
-/* ─ 入力欄 ─ */
-[data-testid="stChatInput"] textarea {
-    font-size: 14px !important;
-    border-radius: 12px !important;
-    border: 1px solid #e5e5e5 !important;
-    background: #f7f7f7 !important;
-    font-family: inherit !important;
-}
-[data-testid="stChatInput"] textarea:focus {
-    border-color: #bbb !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(0,0,0,.05) !important;
-}
-[data-testid="stChatInput"] button {
-    background: #111 !important;
-    border-radius: 9px !important;
-    color: #fff !important;
-}
-
-/* ─ モードボタン ─ */
+/* ─ Streamlit ボタン（モードバー） ─ */
 div[data-testid="stButton"] button {
     border-radius: 999px !important;
     font-size: 12px !important;
-    padding: 5px 14px !important;
+    padding: 4px 14px !important;
     font-family: inherit !important;
+    border: 1px solid #e0e0e0 !important;
+    background: #fff !important;
+    color: #555 !important;
     transition: all .15s !important;
+    font-weight: 500 !important;
+}
+div[data-testid="stButton"] button:hover {
+    border-color: #999 !important;
+    color: #111 !important;
 }
 .mode-on div[data-testid="stButton"] button {
     background: #111 !important;
@@ -181,16 +139,92 @@ div[data-testid="stButton"] button {
     color: #fff !important;
 }
 
+/* ─ チャットエリア ─ */
+/* アシスタントメッセージ */
+[data-testid="stChatMessage"] {
+    padding: 16px 20px !important;
+    background: transparent !important;
+    border: none !important;
+    max-width: 100% !important;
+}
+/* userは右寄せ風 */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background: transparent !important;
+    flex-direction: row-reverse !important;
+}
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) .stChatMessageContent {
+    background: #111 !important;
+    color: #fff !important;
+    border-radius: 18px 18px 4px 18px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    max-width: 75% !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* assistantはChatGPT風グレー */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) .stChatMessageContent {
+    background: #f0f0f0 !important;
+    color: #111 !important;
+    border-radius: 18px 18px 18px 4px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    max-width: 80% !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* アバター */
+[data-testid="chatAvatarIcon-assistant"] {
+    background: #111 !important;
+    border-radius: 50% !important;
+    color: #fff !important;
+    font-size: 14px !important;
+}
+[data-testid="chatAvatarIcon-user"] {
+    background: #e8e8e8 !important;
+    border-radius: 50% !important;
+    color: #555 !important;
+}
+
+/* ─ chat_input ─ */
+[data-testid="stChatInput"] {
+    border-top: 1px solid #ebebeb !important;
+    background: #fff !important;
+    padding: 10px 20px !important;
+}
+[data-testid="stChatInput"] textarea {
+    font-size: 14px !important;
+    border-radius: 24px !important;
+    border: 1px solid #e0e0e0 !important;
+    background: #fff !important;
+    font-family: inherit !important;
+    padding: 10px 16px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06) !important;
+    resize: none !important;
+}
+[data-testid="stChatInput"] textarea:focus {
+    border-color: #aaa !important;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.06) !important;
+    outline: none !important;
+}
+[data-testid="stChatInput"] button {
+    background: #111 !important;
+    border-radius: 50% !important;
+    color: #fff !important;
+    border: none !important;
+}
+
 /* ─ 結果グリッド ─ */
 .favo-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 9px;
-    margin: 8px 0;
+    gap: 8px;
+    padding: 0 20px 8px;
+    margin-top: 6px;
 }
-@media(max-width:540px){ .favo-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:540px){ .favo-grid { grid-template-columns: repeat(2,1fr); padding: 0 10px 8px; } }
 .favo-card {
-    border: 1px solid #efefef;
+    border: 1px solid #ebebeb;
     border-radius: 10px;
     overflow: hidden;
     background: #fff;
@@ -200,18 +234,16 @@ div[data-testid="stButton"] button {
 }
 .favo-card:hover {
     border-color: #ccc;
-    box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
     transform: translateY(-1px);
 }
-.favo-card img {
-    width: 100%; aspect-ratio: 3/4;
-    object-fit: cover; display: block;
-}
+.favo-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
 .favo-card-title {
     display: block; text-align: center;
     font-size: 10px; color: #999;
     padding: 5px 4px;
     overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    text-decoration: none;
 }
 .favo-card-title:hover { color: #111; }
 .no-img {
@@ -222,21 +254,18 @@ div[data-testid="stButton"] button {
 }
 
 /* ─ 女優カード ─ */
-.actress-grid {
-    display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;
-}
+.actress-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .actress-item { width: 72px; text-align: center; }
 .actress-item img {
     width: 72px; height: 96px; object-fit: cover;
-    border-radius: 8px; border: 2px solid #efefef; display: block;
+    border-radius: 8px; border: 2px solid #ebebeb; display: block;
+    transition: border-color .15s;
 }
+.actress-item img:hover { border-color: #111; }
 .actress-name { font-size: 10px; color: #444; margin-top: 3px; font-weight: 700; word-break: break-all; }
 .actress-tags { font-size: 9px; color: #bbb; }
 
-/* セクション区切り */
-.favo-divider {
-    height: 1px; background: #f0f0f0; margin: 4px 0;
-}
+.favo-divider { height: 1px; background: #ebebeb; margin: 4px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -771,7 +800,14 @@ def main():
 
     st.markdown('<div class="favo-divider"></div>', unsafe_allow_html=True)
 
-    # ── チャット履歴 ──
+    # ── 入力を先に受け取る（rerun前にsession_stateへ反映） ──
+    user_input = st.chat_input("例：黒髪 ボブ 清楚 ちょいエロ…")
+    if user_input:
+        st.session_state["chat"].append({"role":"user","text":user_input,"actress_html":""})
+        handle_send(user_input)
+        st.rerun()
+
+    # ── チャット履歴を描画（入力処理後に描画するので最新が反映される） ──
     if not st.session_state["chat"]:
         with st.chat_message("assistant", avatar="🔍"):
             st.write("どんな感じで探す？外見・雰囲気・好きな芸能人、なんでもOKだよ 👀")
@@ -785,16 +821,6 @@ def main():
                     st.write(msg["text"])
                     if msg.get("actress_html"):
                         st.markdown(msg["actress_html"], unsafe_allow_html=True)
-
-    # ── 入力欄（st.chat_input で確実に動く） ──
-    user_input = st.chat_input("例：黒髪 ボブ 清楚 ちょいエロ…")
-    if user_input:
-        # ユーザー発言を即表示
-        with st.chat_message("user"):
-            st.write(user_input)
-        st.session_state["chat"].append({"role":"user","text":user_input})
-        handle_send(user_input)
-        st.rerun()
 
     # ── 結果グリッド ──
     if st.session_state["results"]:
