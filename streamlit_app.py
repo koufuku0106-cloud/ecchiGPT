@@ -141,7 +141,8 @@ div[data-testid="stButton"] button:hover { border-color: #999 !important; color:
     background: #111 !important; border-radius: 50% !important; color: #fff !important;
 }
 [data-testid="chatAvatarIcon-user"] {
-    background: #e8e8e8 !important; border-radius: 50% !important; color: #555 !important;
+    background: #e0e0e0 !important; border-radius: 50% !important; color: #888 !important;
+    font-size: 12px !important;
 }
 
 /* ─ インタビュー進捗バー ─ */
@@ -554,32 +555,40 @@ def ai_interview(user_msg, history, collected, api_key):
     }
     """
     collected_str = json.dumps(collected, ensure_ascii=False)
-    system = f"""あなたはアダルトDVD検索サイトのアシスタントです。
-ユーザーとの会話から、以下の3軸の情報を収集してください。
+    # 未収集の軸を特定
+    missing = [ax for ax in INTERVIEW_AXES if not collected.get(ax)]
+    force_search = any(kw in str(user_msg) for kw in ["探して","検索","見たい","出して","お願い"])
 
-# 収集する情報
+    system = f"""あなたはアダルトDVD検索サイトのアシスタントです。
+ユーザーとの会話から情報を収集し、適切なタイミングで作品を探します。
+
+# 収集する3軸
 - face:  顔タイプ（清楚、ギャル、童顔、お姉さん系、外国人系、など）
 - style: スタイル（巨乳、貧乳、スレンダー、グラマー、ロリ体型、など）
 - play:  プレイ内容（中出し、3P、調教、フェラ、イチャラブ、など 複数可）
 
-# 現在収集済み
+# 現在収集済み（nullは未収集）
 {collected_str}
+
+# まだ聞けていない軸: {missing}
 
 # 出力形式（JSONのみ・説明不要）
 {{
-  "face": "顔タイプ（今回取れた場合。なければnull）",
-  "style": "スタイル（今回取れた場合。なければnull）",
-  "play": "プレイ（今回取れた場合。なければnull）",
+  "face": "顔タイプ（今回の発言から取れた場合のみ。既に収集済みならnull）",
+  "style": "スタイル（今回の発言から取れた場合のみ。既に収集済みならnull）",
+  "play": "プレイ（今回の発言から取れた場合のみ。既に収集済みならnull）",
   "tags": ["検索タグ1", "検索タグ2"],
   "detected_celebs": ["芸能人名"],
   "next_axis": "face|style|play|done",
-  "bot_reply": "返答（1〜2文。次に聞くべき質問を自然に含める。全部揃ったら探す旨を伝える）"
+  "bot_reply": "返答（1〜2文）"
 }}
 
-# ルール
-- next_axisは収集できていない軸を返す。全部揃ったら"done"
-- bot_replyは自然でフレンドリーに。質問は1つだけ
-- detected_celebsは芸能人・アイドル・タレント名を入れる
+# ルール（必ず守る）
+- 既に収集済みの軸は絶対に再度聞かない
+- next_axisは未収集の軸のうち最初のもの。全部揃ったら"done"
+- ユーザーが「探して」「見たい」などと言ったら次_axisを"done"にして探す旨を返す
+- bot_replyは自然でフレンドリー、かつ次の質問は1つだけ
+- 全軸が揃ったとき、またはユーザーが検索を求めたときはbot_replyに「探すよ！」的な内容を入れる
 - 出力はJSONのみ"""
 
     messages = [{"role":"system","content":system}]
@@ -756,23 +765,34 @@ def handle_send(typed):
 
             # 次の軸
             next_axis = result.get("next_axis","done")
+            # ユーザーが「探して」などと言った場合も強制done
+            if force_search:
+                next_axis = "done"
             st.session_state["iv_next_axis"] = next_axis
             if next_axis == "done":
                 st.session_state["iv_done"] = True
         else:
-            # フォールバック
-            bot_reply = next_q_fallback()
+            # AIエラー時フォールバック
             st.session_state["tags"] = dedup(
                 st.session_state["tags"] + [norm(p) for p in typed.split() if norm(p)])
+            if force_search or len(st.session_state["chat"]) >= 5:
+                st.session_state["iv_done"] = True
+                st.session_state["iv_next_axis"] = "done"
+                bot_reply = "OK、探すね！"
+            else:
+                bot_reply = next_q_fallback()
     else:
         # OpenAIなし：そのままタグ追加
-        bot_reply = next_q_fallback()
+        force_search = any(kw in typed for kw in ["探して","検索","見たい","出して","お願い"])
         st.session_state["tags"] = dedup(
             st.session_state["tags"] + [norm(p) for p in typed.split() if norm(p)])
-        # 3軸が全て埋まったとみなす（OpenAIなしの場合は3回で強制完了）
-        if len(st.session_state["chat"]) >= 5:
+        # 「探して」または3ターン以上でdone
+        if force_search or len(st.session_state["chat"]) >= 5:
             st.session_state["iv_done"] = True
             st.session_state["iv_next_axis"] = "done"
+            bot_reply = "OK、探すね！"
+        else:
+            bot_reply = next_q_fallback()
 
     # チャットに追加
     actress_html = render_actress_cards_html(actress_cards)
@@ -800,10 +820,7 @@ def handle_send(typed):
         st.session_state["results"]     = res["top10"]
         st.session_state["all_results"] = res["all"]
         st.session_state["show_all"]    = False
-    elif not fanza_api or not fanza_aff:
-        st.session_state["chat"].append({
-            "role":"bot","text":"⚠ サイドバーの「APIキー」にFANZAのキーを入力してね","actress_html":"",
-        })
+    # API未設定時は静かに無視（メッセージ不要）
 
 def next_q_fallback():
     """OpenAIなし時の次の質問"""
